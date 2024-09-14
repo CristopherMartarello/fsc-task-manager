@@ -1,6 +1,7 @@
 const TaskModel = require('../models/task.model');
-const { notFoundError } = require('../errors/mongodb.errors');
+const { notFoundError, objectIdError } = require('../errors/mongodb.errors');
 const { notAllowedFieldsToUpdateError } = require('../errors/general.errors');
+const { default: mongoose } = require('mongoose');
 
 class TaskController {
     constructor(req, res) {
@@ -13,7 +14,7 @@ class TaskController {
             const tasks = await TaskModel.find({});
             this.res.status(200).send(tasks);
         } catch (error) {
-            this.res.status(500).send({message: error.message});
+            return this.res.status(500).send({message: error.message});
         }
     }
 
@@ -26,7 +27,11 @@ class TaskController {
             }
             return this.res.status(200).send({message: 'Task encontrada com sucesso!', task: task});
         } catch (error) {
-            this.res.status(500).send({ message: error.message });
+            if (error instanceof mongoose.Error.CastError) {
+                return objectIdError(this.res);
+            } else {
+                return this.res.status(500).send({ message: error.message });
+            }
         }
     }
 
@@ -36,7 +41,7 @@ class TaskController {
             await newTask.save();
             this.res.status(201).send({message: 'Task criada com sucesso!', task: newTask});
         } catch (error) {
-            this.res.status(500).send({message: error.message});
+            return this.res.status(500).send({message: error.message});
         }
     }
 
@@ -64,6 +69,9 @@ class TaskController {
             await taskToUpdate.save();
             return this.res.status(200).send(taskToUpdate);
         } catch (error) {
+            if (error instanceof mongoose.Error.CastError) {
+                return objectIdError(this.res);
+            }
             return this.res.status(500).send({message: error.message});
         }
     }
@@ -78,7 +86,10 @@ class TaskController {
             const deletedTask = await TaskModel.findByIdAndDelete(taskId);
             this.res.status(200).send({message: 'Task deletada com sucesso!', task: deletedTask});
         } catch (error) {
-            this.res.status(500).send({message: error.message});
+            if (error instanceof mongoose.Error.CastError) {
+                return objectIdError(this.res);
+            }
+            return this.res.status(500).send({message: error.message});
         }
     }
 }
