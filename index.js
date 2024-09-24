@@ -4,8 +4,12 @@ const connectToDatabase = require('./src/database/mongoose.database');
 const TaskRouter = require('./src/routes/task.routes');
 
 dotenv.config();
+
 const app = express();
 app.use(express.json());
+
+const cors = require('cors');
+app.use(cors());
 
 connectToDatabase();
 
